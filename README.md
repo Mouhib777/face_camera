@@ -118,3 +118,4 @@ Contributions of any kind are more than welcome! Feel free to fork and improve `
 ---  
 
 You can support the library by liking it on pub, staring in on Github and reporting any bugs you encounter.# smart_face_camera
+# smart_face_camera
