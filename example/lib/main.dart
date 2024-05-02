@@ -7,7 +7,7 @@ import 'package:face_camera/face_camera.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await FaceCamera.initialize();
+  await FaceCameraPlus.initialize();
 
   runApp(const MyApp());
 }

@@ -1,3 +1,5 @@
+import 'package:face_camera/src/models/detected_image.dart';
+import 'package:face_camera/src/res/enums.dart';
 import 'package:flutter/material.dart';
 
 import '../../face_camera.dart';

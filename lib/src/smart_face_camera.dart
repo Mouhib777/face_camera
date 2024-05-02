@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:face_camera/src/models/detected_image.dart';
+import 'package:face_camera/src/res/enums.dart';
 import 'package:flutter/material.dart';
 
 import '../face_camera.dart';
@@ -125,7 +127,7 @@ class SmartFaceCamera extends StatefulWidget {
 class _SmartFaceCameraState extends State<SmartFaceCamera>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController? _controller;
-
+int _countdown = 0; 
   bool _alreadyCheckingImage = false;
 
   DetectedFace? _detectedFace;
@@ -141,7 +143,7 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
   final List<CameraLens> _availableCameraLens = [];
 
   void _getAllAvailableCameraLens() {
-    for (CameraDescription d in FaceCamera.cameras) {
+    for (CameraDescription d in FaceCameraPlus.cameras) {
       final lens = EnumHandler.cameraLensDirectionToCameraLens(d.lensDirection);
       if (lens != null && !_availableCameraLens.contains(lens)) {
         _availableCameraLens.add(lens);
@@ -159,7 +161,7 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
   }
 
   Future<void> _initCamera() async {
-    final cameras = FaceCamera.cameras
+    final cameras = FaceCameraPlus.cameras
         .where((c) =>
             c.lensDirection ==
             EnumHandler.cameraLensToCameraLensDirection(
@@ -252,6 +254,7 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
     return Stack(
       alignment: Alignment.center,
       children: [
+        
         if (cameraController != null &&
             cameraController.value.isInitialized) ...[
           Transform.scale(
@@ -268,7 +271,19 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
                     child: Stack(
                       fit: StackFit.expand,
                       children: <Widget>[
+      
+                          
                         _cameraDisplayWidget(),
+                                          if (_countdown > 0)
+                        Positioned(
+                            child: Center(
+                              child: Text(
+                                _countdown.toString(),
+                                style: TextStyle(
+                                    fontSize: 48, color: Colors.white),
+                              ),
+                            ),
+                          ),
                         if (_detectedFace != null &&
                             widget.indicatorShape != IndicatorShape.none) ...[
                           SizedBox(
@@ -303,15 +318,16 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
             ),
           )
         ] else ...[
-          const Text('No Camera Detected',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.w500,
-              )),
-          CustomPaint(
-            size: size,
-            painter: HolePainter(),
-          )
+          Container(color: Colors.black,)
+          // const Text('No Camera Detected',
+          //     style: TextStyle(
+          //       fontSize: 18.0,
+          //       fontWeight: FontWeight.w500,
+          //     )),
+          // CustomPaint(
+          //   size: size,
+          //   painter: HolePainter(),
+          // )
         ],
         if (widget.showControls) ...[
           Align(
@@ -459,35 +475,93 @@ class _SmartFaceCameraState extends State<SmartFaceCamera>
     cameraController.setExposurePoint(offset);
     cameraController.setFocusPoint(offset);
   }
+void _onTakePictureButtonPressed() async {
+  final CameraController? cameraController = _controller;
+  try {
+    cameraController!.stopImageStream().whenComplete(() async {
+      for (int i = 3; i > 0; i--) {
+        setState(() {
+          _countdown = i;
+        });
+        await Future.delayed(const Duration(seconds: 1));
+      }
+      takePicture().then((XFile? file) {
+        /// Return image callback
+        if (file != null) {
+          widget.onCapture(File(file.path));
+        }
 
-  void _onTakePictureButtonPressed() async {
-    final CameraController? cameraController = _controller;
-    try {
-      cameraController!.stopImageStream().whenComplete(() async {
-        await Future.delayed(const Duration(milliseconds: 500));
-        takePicture().then((XFile? file) {
-          /// Return image callback
-          if (file != null) {
-            widget.onCapture(File(file.path));
-          }
-
-          /// Resume image stream after 2 seconds of capture
-          Future.delayed(const Duration(seconds: 2)).whenComplete(() {
-            if (mounted && cameraController.value.isInitialized) {
-              try {
-                _startImageStream();
-              } catch (e) {
-                logError(e.toString());
-              }
+        /// Resume image stream after 2 seconds of capture
+        Future.delayed(const Duration(seconds: 2)).whenComplete(() {
+          if (mounted && cameraController.value.isInitialized) {
+            try {
+              _startImageStream();
+            } catch (e) {
+              logError(e.toString());
             }
-          });
+          }
         });
       });
-    } catch (e) {
-      logError(e.toString());
-    }
+    });
+  } catch (e) {
+    logError(e.toString());
   }
+}
 
+  // void _onTakePictureButtonPressed() async {
+  //   final CameraController? cameraController = _controller;
+  //   try {
+  //     cameraController!.stopImageStream().whenComplete(() async {
+  //       await Future.delayed(const Duration(milliseconds: 3000));
+  //       takePicture().then((XFile? file) {
+  //         /// Return image callback
+  //         if (file != null) {
+  //           widget.onCapture(File(file.path));
+  //         }
+
+  //         /// Resume image stream after 2 seconds of capture
+  //         Future.delayed(const Duration(seconds: 2)).whenComplete(() {
+  //           if (mounted && cameraController.value.isInitialized) {
+  //             try {
+  //               _startImageStream();
+  //             } catch (e) {
+  //               logError(e.toString());
+  //             }
+  //           }
+  //         });
+  //       });
+  //     });
+  //   } catch (e) {
+  //     logError(e.toString());
+  //   }
+  // }
+  // void _onTakePictureFaceDetected_withDelay() async {
+  //   final CameraController? cameraController = _controller;
+  //   try {
+  //     cameraController!.stopImageStream().whenComplete(() async {
+  //       await Future.delayed(const Duration(milliseconds: 3500));
+  //       takePicture().then((XFile? file) {
+  //         /// Return image callback
+  //         if (file != null) {
+  //           widget.onCapture(File(file.path));
+  //         }
+
+  //         /// Resume image stream after 2 seconds of capture
+  //         Future.delayed(const Duration(seconds: 2)).whenComplete(() {
+  //           if (mounted && cameraController.value.isInitialized) {
+  //             try {
+  //               _startImageStream();
+  //             } catch (e) {
+  //               logError(e.toString());
+  //             }
+  //           }
+  //         });
+  //       });
+  //     });
+  //   } catch (e) {
+  //     logError(e.toString());
+  //   }
+  // }
   Future<XFile?> takePicture() async {
     final CameraController? cameraController = _controller;
     if (cameraController == null || !cameraController.value.isInitialized) {
